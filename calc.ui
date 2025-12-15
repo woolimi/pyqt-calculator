@@ -97,7 +97,7 @@
   <widget class="QPushButton" name="equalBtn">
    <property name="geometry">
     <rect>
-     <x>160</x>
+     <x>260</x>
      <y>310</y>
      <width>61</width>
      <height>61</height>
@@ -266,7 +266,7 @@
   <widget class="QPushButton" name="sign">
    <property name="geometry">
     <rect>
-     <x>260</x>
+     <x>160</x>
      <y>310</y>
      <width>61</width>
      <height>61</height>
