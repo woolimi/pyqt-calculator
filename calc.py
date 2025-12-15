@@ -12,7 +12,10 @@ getcontext().prec = 10
 # ========== 헬퍼 함수 ==========
 def format_result(result):
     """계산 결과를 문자열로 포맷팅 (불필요한 0 제거)"""
-    result_str = str(result).rstrip('0').rstrip('.')
+    result_str = str(result)
+    # 소수점이 있는 경우에만 끝의 0과 소수점 제거
+    if '.' in result_str:
+        result_str = result_str.rstrip('0').rstrip('.')
     return result_str if result_str else "0"
 
 
@@ -91,6 +94,7 @@ class WindowClass(QMainWindow, from_class):
         self.operands = [] # string list
         self.operators = [] # string list +, -, *, /
         self.has_error = False  # 에러 상태 플래그
+        self.just_calculated = False  # 등호 직후 상태 플래그
 
         self.lineEdit.setText("0")
 
@@ -175,6 +179,11 @@ class WindowClass(QMainWindow, from_class):
             if self._checkError():
                 return
             
+            # 등호 직후 상태이고 연산자가 없으면 새로운 계산 시작
+            if self.just_calculated and not self.operators:
+                self.operands = []
+                self.just_calculated = False
+            
             operand_idx = self._getOperandIndex()
             acc = self.operands[operand_idx]
             
@@ -194,6 +203,11 @@ class WindowClass(QMainWindow, from_class):
         if self._checkError():
             return
         
+        # 등호 직후 상태이고 연산자가 없으면 새로운 계산 시작
+        if self.just_calculated and not self.operators:
+            self.operands = []
+            self.just_calculated = False
+        
         operand_idx = self._getOperandIndex()
         acc = self.operands[operand_idx]
         
@@ -205,6 +219,9 @@ class WindowClass(QMainWindow, from_class):
 
     def cleanEntry(self):
         """현재 입력값만 초기화 (CE 버튼)"""
+        if self._checkError():
+            return
+
         acc = self._getAcc()
         acc = "0"
         self._setAcc(acc)
@@ -215,6 +232,7 @@ class WindowClass(QMainWindow, from_class):
         self.operands = ["0"]
         self.operators = []
         self.has_error = False
+        self.just_calculated = False
         self.render(self._getAcc())
 
     def render(self, value):
@@ -228,9 +246,17 @@ class WindowClass(QMainWindow, from_class):
         if self._checkError():
             return
         
-        # 피연산자가 없으면 초기화
+        # 등호 직후 상태 플래그 리셋
+        self.just_calculated = False
+        
+        # 피연산자가 없으면 초기화 (등호 후 연산자 입력 시 화면의 값을 사용)
         if not self.operands:
-            self.operands = ["0"]
+            # 화면에 표시된 값을 첫 번째 피연산자로 사용
+            current_display = self.lineEdit.text()
+            if current_display and current_display != "ERR":
+                self.operands = [current_display]
+            else:
+                self.operands = ["0"]
         
         if len(self.operands) == 1:
             # 피연산자 1개: 연산자만 설정
@@ -293,8 +319,10 @@ class WindowClass(QMainWindow, from_class):
                 return
             
             # 계산 완료 후 상태 초기화 (연산자 제거, 피연산자는 결과값만 유지)
-            self.operands = []
+            # 등호 후 연산자 입력 시 이전 결과를 사용할 수 있도록 결과값을 operands[0]에 저장
+            self.operands = [result]
             self.operators = []
+            self.just_calculated = True  # 등호 직후 상태 플래그 설정
             self.render(result)
 
 
