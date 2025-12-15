@@ -94,7 +94,7 @@
     <string>.</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="equal">
+  <widget class="QPushButton" name="equalBtn">
    <property name="geometry">
     <rect>
      <x>160</x>
@@ -198,7 +198,7 @@
     <string>AC</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="cleanBtn">
+  <widget class="QPushButton" name="cleanEntryBtn">
    <property name="geometry">
     <rect>
      <x>330</x>
@@ -211,7 +211,7 @@
     <string>CE</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="calcPlus">
+  <widget class="QPushButton" name="plus">
    <property name="geometry">
     <rect>
      <x>260</x>
@@ -224,7 +224,7 @@
     <string>+</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="calcMinus">
+  <widget class="QPushButton" name="minus">
    <property name="geometry">
     <rect>
      <x>330</x>
@@ -237,7 +237,7 @@
     <string>-</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="calcMulti">
+  <widget class="QPushButton" name="multi">
    <property name="geometry">
     <rect>
      <x>260</x>
@@ -250,7 +250,7 @@
     <string>X</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="calcDiv">
+  <widget class="QPushButton" name="div">
    <property name="geometry">
     <rect>
      <x>330</x>
@@ -263,7 +263,7 @@
     <string>/</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="calcSign">
+  <widget class="QPushButton" name="sign">
    <property name="geometry">
     <rect>
      <x>260</x>
