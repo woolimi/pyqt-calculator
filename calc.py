@@ -58,32 +58,51 @@ def calculate(operator, operand1, operand2):
 """
 쌀집 계산기 상태 관리 규칙:
 
-1. operands: 문자열 숫자 리스트 (예: ["123", "456"])
-   - 피연산자들을 문자열로 저장
-   - 최대 2개까지 저장 가능
+1. 상태 변수:
+   - accumulator: 문자열 숫자 (예: "123")
+     * 이전 계산 결과 또는 첫 번째 피연산자를 저장
+     * 계산이 완료되거나 초기화될 때까지 유지
+   
+   - lineEdit: 화면에 표시되는 현재 숫자 (예: "456")
+     * 사용자가 입력 중인 숫자를 표시
+     * 항상 유효한 숫자 문자열을 유지 ("0" 기본값)
+   
+   - operator: 연산자 문자열 또는 None (예: "+", "-", "*", "/", None)
+     * 현재 설정된 연산자를 저장
+     * None이면 연산자가 설정되지 않은 상태
+   
+   - operator_entered: 불린 플래그
+     * 연산자가 입력되었는지 여부를 나타냄
+     * True이면 다음 숫자 입력 시 새로운 숫자로 시작해야 함
 
-2. operators: 연산자 리스트 (예: ["+"], ["-"])
-   - 연산자를 문자열로 저장
-   - 항상 0개 또는 1개만 유지
-
-3. 숫자 버튼 클릭 시 동작:
-   - 연산자가 있으면: 두 번째 operand에 숫자 추가 (없으면 "0" 생성 후 추가)
-   - 연산자가 없으면: 첫 번째 operand에 숫자 추가 (없으면 "0" 생성 후 추가)
+2. 숫자 버튼 클릭 시 동작:
+   - lineEdit에서 현재 숫자를 읽어옴
+   - operator_entered 플래그가 True이면:
+     * 새로운 숫자 입력 시작 (lineEdit을 "0" 또는 빈 문자열로 초기화)
+     * operator_entered 플래그를 False로 설정
+   - operator_entered 플래그가 False이면:
+     * 기존 숫자에 숫자를 추가
    - 현재 값이 "0"이면 빈 문자열로 초기화 후 숫자 추가
    - 현재 값이 "-0"이면 "-"로 초기화 후 숫자 추가
-   - 등호 버튼 후 상태(operands가 빈 배열)에서는 새로운 피연산자로 시작
+   - 숫자 입력 후 operator_entered 플래그를 False로 설정
+   - 최종 숫자를 lineEdit에 표시
 
-4. 연산자 버튼 클릭 시 동작:
-   - operands가 1개일 때: operators에 연산자 추가 (기존 연산자가 있으면 교체)
-   - operands가 2개일 때: 
-     * 기존 연산자로 계산 수행 (operands[0] 연산자 operands[1])
-     * 결과를 operands[0]에 저장, operands는 1개로 축소
-     * 새로운 연산자를 operators에 설정
+3. 연산자 버튼 클릭 시 동작:
+   - lineEdit의 숫자는 건드리지 않음 (화면 표시 유지)
+   - accumulator와 operator가 모두 설정되어 있고, lineEdit에 유효한 숫자가 있으면:
+     * 이전 계산 수행 (accumulator 연산자 lineEdit의 숫자)
+     * 결과를 accumulator에 저장하고 lineEdit에 표시
+   - accumulator가 없거나 비어있으면:
+     * lineEdit의 현재 값을 accumulator에 저장
+   - operator에 새로운 연산자를 저장
+   - operator_entered 플래그를 True로 설정
 
-5. 등호 버튼 클릭 시 동작:
-   - operands가 2개, operators가 1개일 때만 계산 수행
-   - 계산 후 operands와 operators 모두 초기화
-   - 결과값은 화면에만 표시 (다음 숫자 입력 시 새로 시작)
+4. 등호 버튼 클릭 시 동작:
+   - accumulator와 operator가 모두 설정되어 있고, lineEdit에 유효한 숫자가 있을 때만 계산 수행
+   - 계산 수행 (accumulator 연산자 lineEdit의 숫자)
+   - 결과를 accumulator에 저장하고 lineEdit에 표시
+   - operator를 None으로 초기화
+   - operator_entered 플래그를 False로 설정
 """
 
 class WindowClass(QMainWindow, from_class):
@@ -91,10 +110,10 @@ class WindowClass(QMainWindow, from_class):
         super().__init__()
         self.setupUi(self)
         self.setWindowTitle("Calculator")
-        self.operands = [] # string list
-        self.operators = [] # string list +, -, *, /
+        self.accumulator = None  # 문자열 숫자 또는 None
+        self.operator = None  # 연산자 문자열 ("+", "-", "*", "/") 또는 None
+        self.operator_entered = False  # 연산자 입력 플래그
         self.has_error = False  # 에러 상태 플래그
-        self.just_calculated = False  # 등호 직후 상태 플래그
 
         self.lineEdit.setText("0")
 
@@ -121,46 +140,10 @@ class WindowClass(QMainWindow, from_class):
     def _handleError(self, error_msg="ERR"):
         """에러 처리"""
         self.has_error = True
-        self.operands = [error_msg]
-        self.operators = []
+        self.accumulator = error_msg
+        self.operator = None
+        self.operator_entered = False
         self.render(error_msg)
-    
-    def _getOperandIndex(self):
-        """
-        현재 입력할 operand의 인덱스를 반환
-        연산자가 있으면 두 번째 operand(1), 없으면 첫 번째 operand(0)
-        """
-        if self.operators:
-            # 두 번째 operand가 없으면 생성
-            if len(self.operands) < 2:
-                self.operands.append("0")
-            return 1
-        else:
-            # 첫 번째 operand가 없으면 생성
-            if not self.operands:
-                self.operands = ["0"]
-            return 0
-    
-    def _getAcc(self):
-        """마지막 operand 값을 반환 (없으면 "0" 생성)"""
-        if not self.operands:
-            self.operands = ["0"]
-        return self.operands[-1]
-
-    def _setAcc(self, acc):
-        """operand 값 설정"""
-        if not self.operators:
-            # 연산자가 없으면 첫 번째 operand 업데이트
-            if not self.operands:
-                self.operands = [acc]
-            else:
-                self.operands[0] = acc
-        elif len(self.operators) == 1:
-            # 연산자가 1개면 두 번째 operand 설정
-            if len(self.operands) < 2:
-                self.operands.append(acc)
-            else:
-                self.operands[1] = acc
     
     def _performCalculation(self, operator, operand1, operand2):
         """계산 수행 및 에러 처리"""
@@ -179,23 +162,32 @@ class WindowClass(QMainWindow, from_class):
             if self._checkError():
                 return
             
-            # 등호 직후 상태이고 연산자가 없으면 새로운 계산 시작
-            if self.just_calculated and not self.operators:
-                self.operands = []
-                self.just_calculated = False
+            # lineEdit에서 현재 숫자 읽기
+            current_value = self.lineEdit.text()
             
-            operand_idx = self._getOperandIndex()
-            acc = self.operands[operand_idx]
+            # operator_entered가 True이면 새로운 숫자 입력 시작
+            if self.operator_entered:
+                current_value = "0"
+                self.operator_entered = False
+            
+            # 등호 후 새로운 계산 시작 (accumulator가 있고 operator가 없으면 초기화)
+            if self.accumulator is not None and self.operator is None:
+                self.accumulator = None
+                current_value = "0"
             
             # "0"이면 빈 문자열로 초기화, "-0"이면 "-"로 초기화 후 숫자 추가
-            if acc == "0":
-                acc = ""
-            elif acc == "-0":
-                acc = "-"
-            acc += str(num)
+            if current_value == "0":
+                current_value = ""
+            elif current_value == "-0":
+                current_value = "-"
             
-            self.operands[operand_idx] = acc
-            self.render(acc)
+            current_value += str(num)
+            
+            # 숫자 입력 후 operator_entered 플래그를 False로 설정
+            self.operator_entered = False
+            
+            # 최종 숫자를 lineEdit에 표시
+            self.render(current_value)
         return func
     
     def clickDot(self):
@@ -203,37 +195,39 @@ class WindowClass(QMainWindow, from_class):
         if self._checkError():
             return
         
-        # 등호 직후 상태이고 연산자가 없으면 새로운 계산 시작
-        if self.just_calculated and not self.operators:
-            self.operands = []
-            self.just_calculated = False
+        # lineEdit에서 현재 숫자 읽기
+        current_value = self.lineEdit.text()
         
-        operand_idx = self._getOperandIndex()
-        acc = self.operands[operand_idx]
+        # operator_entered가 True이면 새로운 숫자 입력 시작
+        if self.operator_entered:
+            current_value = "0"
+            self.operator_entered = False
+        
+        # 등호 후 새로운 계산 시작 (accumulator가 있고 operator가 없으면 초기화)
+        if self.accumulator is not None and self.operator is None:
+            self.accumulator = None
         
         # 정수 패턴이면 소수점 추가
-        if re.match(r'^-?\d+$', acc):
-            acc += "."
-            self.operands[operand_idx] = acc
-            self.render(acc)
+        if re.match(r'^-?\d+$', current_value):
+            current_value += "."
+            self.render(current_value)
 
     def cleanEntry(self):
         """현재 입력값만 초기화 (CE 버튼)"""
         if self._checkError():
             return
 
-        acc = self._getAcc()
-        acc = "0"
-        self._setAcc(acc)
-        self.render(acc)
+        # lineEdit의 값만 "0"으로 초기화
+        # accumulator와 operator는 유지
+        self.render("0")
 
     def cleanAll(self):
         """모든 상태 초기화 (AC 버튼)"""
-        self.operands = ["0"]
-        self.operators = []
+        self.accumulator = None
+        self.operator = None
+        self.operator_entered = False
         self.has_error = False
-        self.just_calculated = False
-        self.render(self._getAcc())
+        self.render("0")
 
     def render(self, value):
         """화면에 값 표시"""
@@ -246,31 +240,31 @@ class WindowClass(QMainWindow, from_class):
         if self._checkError():
             return
         
-        # 등호 직후 상태 플래그 리셋
-        self.just_calculated = False
+        # lineEdit의 숫자는 건드리지 않음 (화면 표시 유지)
+        current_value = self.lineEdit.text()
         
-        # 피연산자가 없으면 초기화 (등호 후 연산자 입력 시 화면의 값을 사용)
-        if not self.operands:
-            # 화면에 표시된 값을 첫 번째 피연산자로 사용
-            current_display = self.lineEdit.text()
-            if current_display and current_display != "ERR":
-                self.operands = [current_display]
+        # accumulator와 operator가 모두 설정되어 있고 lineEdit에 유효한 숫자가 있으면
+        if self.accumulator is not None and self.operator is not None and current_value and current_value != "ERR":
+            # 이전 계산 수행 (accumulator 연산자 lineEdit의 숫자)
+            result = self._performCalculation(self.operator, self.accumulator, current_value)
+            if result is None:  # 에러 발생
+                return
+            # 결과를 accumulator에 저장하고 lineEdit에 표시
+            self.accumulator = result
+            self.render(result)
+        
+        # accumulator가 없거나 비어있으면 lineEdit의 현재 값을 accumulator에 저장
+        if self.accumulator is None:
+            if current_value and current_value != "ERR":
+                self.accumulator = current_value
             else:
-                self.operands = ["0"]
+                self.accumulator = "0"
         
-        if len(self.operands) == 1:
-            # 피연산자 1개: 연산자만 설정
-            self.operators = [operator]
-        elif len(self.operands) == 2:
-            # 피연산자 2개: 기존 연산으로 계산 후 새 연산자 설정
-            if self.operators:
-                prev_op = self.operators[0]
-                result = self._performCalculation(prev_op, self.operands[0], self.operands[1])
-                if result is None:  # 에러 발생
-                    return
-                self.operands = [result]
-                self.render(result)
-            self.operators = [operator]
+        # operator에 새로운 연산자를 저장
+        self.operator = operator
+        
+        # operator_entered 플래그를 True로 설정
+        self.operator_entered = True
 
     def calcPlus(self):
         """덧셈 연산자 설정"""
@@ -293,37 +287,50 @@ class WindowClass(QMainWindow, from_class):
         if self._checkError():
             return
         
-        operand_idx = self._getOperandIndex()
-        acc = self.operands[operand_idx]
+        # lineEdit에서 현재 숫자 읽기
+        current_value = self.lineEdit.text()
         
         # 부호 토글
-        if acc.startswith("-"):
-            acc = acc[1:]
+        if current_value.startswith("-"):
+            current_value = current_value[1:]
         else:
-            acc = "-" + acc
+            current_value = "-" + current_value
         
-        self.operands[operand_idx] = acc
-        self.render(acc)
+        # lineEdit에 표시
+        self.render(current_value)
 
     def calcEqual(self):
         """등호 버튼 - 계산 수행 및 상태 초기화"""
         if self._checkError():
             return
         
-        # 피연산자 2개, 연산자 1개일 때만 계산 수행
-        if len(self.operands) == 2 and len(self.operators) == 1:
-            operator = self.operators[0]
-            result = self._performCalculation(operator, self.operands[0], self.operands[1])
+        # operator_entered가 True이면 마지막 연산자를 취소하고 현재 결과만 표시
+        if self.operator_entered:
+            # operator를 None으로 초기화하여 연산 취소
+            self.operator = None
+            # operator_entered 플래그를 False로 설정
+            self.operator_entered = False
+            # 현재 lineEdit의 값은 그대로 유지 (추가 계산 없음)
+            return
+        
+        # accumulator와 operator가 모두 설정되어 있고 lineEdit에 유효한 숫자가 있을 때만 계산 수행
+        current_value = self.lineEdit.text()
+        if self.accumulator is not None and self.operator is not None and current_value and current_value != "ERR":
+            # 계산 수행 (accumulator 연산자 lineEdit의 숫자)
+            result = self._performCalculation(self.operator, self.accumulator, current_value)
             
             if result is None:  # 에러 발생
                 return
             
-            # 계산 완료 후 상태 초기화 (연산자 제거, 피연산자는 결과값만 유지)
-            # 등호 후 연산자 입력 시 이전 결과를 사용할 수 있도록 결과값을 operands[0]에 저장
-            self.operands = [result]
-            self.operators = []
-            self.just_calculated = True  # 등호 직후 상태 플래그 설정
+            # 결과를 accumulator에 저장하고 lineEdit에 표시
+            self.accumulator = result
             self.render(result)
+            
+            # operator를 None으로 초기화
+            self.operator = None
+            
+            # operator_entered 플래그를 False로 설정
+            self.operator_entered = False
 
 
 
