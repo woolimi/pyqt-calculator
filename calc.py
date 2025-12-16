@@ -185,6 +185,8 @@ class WindowClass(QMainWindow, from_class):
             # "-0"이면 "-"로 초기화 후 숫자 추가
             if current_value == "-0":
                 current_value = "-"
+            if current_value == "0":
+                current_value = ""
             
             current_value += str(num)
             
