@@ -152,6 +152,14 @@ class WindowClass(QMainWindow, from_class):
             self._handleError()
             return None
         return result
+    
+    def _isAfterEqual(self):
+        """등호 실행 후 상태인지 확인
+        
+        Returns:
+            bool: 등호 실행 후 상태인지 여부 (True면 등호 실행 후, False면 그 외)
+        """
+        return self.accumulator is not None and self.operator is None
 
 
     # ========== 입력 메서드 ==========
@@ -167,18 +175,15 @@ class WindowClass(QMainWindow, from_class):
             
             # operator_entered가 True이면 새로운 숫자 입력 시작
             if self.operator_entered:
-                current_value = "0"
-                self.operator_entered = False
-            
-            # 등호 후 새로운 계산 시작 (accumulator가 있고 operator가 없으면 초기화)
-            if self.accumulator is not None and self.operator is None:
-                self.accumulator = None
-                current_value = "0"
-            
-            # "0"이면 빈 문자열로 초기화, "-0"이면 "-"로 초기화 후 숫자 추가
-            if current_value == "0":
                 current_value = ""
-            elif current_value == "-0":
+            
+            # 등호 후 새로운 계산 시작
+            if self._isAfterEqual():
+                current_value = ""
+                self.accumulator = None
+            
+            # "-0"이면 "-"로 초기화 후 숫자 추가
+            if current_value == "-0":
                 current_value = "-"
             
             current_value += str(num)
@@ -198,13 +203,8 @@ class WindowClass(QMainWindow, from_class):
         # lineEdit에서 현재 숫자 읽기
         current_value = self.lineEdit.text()
         
-        # operator_entered가 True이면 새로운 숫자 입력 시작
-        if self.operator_entered:
-            current_value = "0"
-            self.operator_entered = False
-        
-        # 등호 후 새로운 계산 시작 (accumulator가 있고 operator가 없으면 초기화)
-        if self.accumulator is not None and self.operator is None:
+        # 등호 후 새로운 계산 시작
+        if self._isAfterEqual():
             self.accumulator = None
         
         # 정수 패턴이면 소수점 추가
@@ -243,8 +243,21 @@ class WindowClass(QMainWindow, from_class):
         # lineEdit의 숫자는 건드리지 않음 (화면 표시 유지)
         current_value = self.lineEdit.text()
         
+        # accumulator가 없거나 비어있으면 아무것도 안함
+        if self.accumulator is None:
+            self.accumulator = current_value
+            self.operator = operator
+            self.operator_entered = True
+            return
+
+        # 이전에 operator를 눌렀다면 새로운 operator로 설정하고 종료
+        if self.accumulator is not None and self.operator_entered:
+            self.operator = operator
+            self.operator_entered = True
+            return
+
         # accumulator와 operator가 모두 설정되어 있고 lineEdit에 유효한 숫자가 있으면
-        if self.accumulator is not None and self.operator is not None and current_value and current_value != "ERR":
+        if self.accumulator is not None and self.operator is not None and current_value:
             # 이전 계산 수행 (accumulator 연산자 lineEdit의 숫자)
             result = self._performCalculation(self.operator, self.accumulator, current_value)
             if result is None:  # 에러 발생
@@ -253,12 +266,6 @@ class WindowClass(QMainWindow, from_class):
             self.accumulator = result
             self.render(result)
         
-        # accumulator가 없거나 비어있으면 lineEdit의 현재 값을 accumulator에 저장
-        if self.accumulator is None:
-            if current_value and current_value != "ERR":
-                self.accumulator = current_value
-            else:
-                self.accumulator = "0"
         
         # operator에 새로운 연산자를 저장
         self.operator = operator
