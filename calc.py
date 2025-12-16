@@ -324,7 +324,7 @@ class WindowClass(QMainWindow, from_class):
         
         # accumulator와 operator가 모두 설정되어 있고 lineEdit에 유효한 숫자가 있을 때만 계산 수행
         current_value = self.lineEdit.text()
-        if self.accumulator is not None and self.operator is not None and current_value and current_value != "ERR":
+        if self.accumulator is not None and self.operator is not None and current_value:
             # 계산 수행 (accumulator 연산자 lineEdit의 숫자)
             result = self._performCalculation(self.operator, self.accumulator, current_value)
             
