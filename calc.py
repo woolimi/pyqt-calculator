@@ -130,6 +130,31 @@ class WindowClass(QMainWindow, from_class):
         self.div.clicked.connect(self.calcDiv)
         self.sign.clicked.connect(self.calcSign)
         self.equalBtn.clicked.connect(self.calcEqual)
+        
+        # 키보드 이벤트를 받기 위해 포커스 정책 설정
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        # lineEdit이 포커스를 받지 않도록 설정 (키보드 이벤트가 메인 윈도우로 가도록)
+        self.lineEdit.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        
+        # 모든 버튼이 포커스를 받지 않도록 설정 (엔터 키가 버튼을 누르지 않도록)
+        all_buttons = []
+        
+        # 숫자 버튼 추가
+        for i in range(10):
+            button = getattr(self, f'number{i}', None)
+            if button:
+                all_buttons.append(button)
+        
+        # 다른 버튼들 추가
+        all_buttons.extend([
+            self.dot, self.cleanEntryBtn, self.cleanAllBtn,
+            self.plus, self.minus, self.multi, self.div,
+            self.sign, self.equalBtn
+        ])
+        
+        for button in all_buttons:
+            if button:
+                button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
     # ========== 헬퍼 메서드 ==========
     
@@ -213,6 +238,16 @@ class WindowClass(QMainWindow, from_class):
         if re.match(r'^-?\d+$', current_value):
             current_value += "."
             self.render(current_value)
+
+    def clean(self):
+        if self._checkError():
+            return
+        current_value = self.lineEdit.text()
+        current_value = current_value[0:-1]
+
+        if current_value == "":
+            current_value = "0"
+        self.render(current_value)
 
     def cleanEntry(self):
         """현재 입력값만 초기화 (CE 버튼)"""
@@ -341,7 +376,51 @@ class WindowClass(QMainWindow, from_class):
             # operator_entered 플래그를 False로 설정
             self.operator_entered = False
 
-
+    def keyPressEvent(self, e):
+        """키보드 입력 처리"""
+        key = e.key()
+        
+        # 숫자 키 (0-9)
+        if Qt.Key.Key_0 <= key <= Qt.Key.Key_9:
+            num = key - Qt.Key.Key_0
+            self.clickNumber(num)()
+        # Backspace 키 처리
+        elif key == Qt.Key.Key_Backspace:
+            modifiers = e.modifiers()
+            # Shift + Backspace - 전체 초기화
+            if modifiers & Qt.KeyboardModifier.ShiftModifier:
+                self.cleanAll()
+            # Ctrl + Backspace - 현재 입력값만 초기화
+            elif modifiers & Qt.KeyboardModifier.ControlModifier:
+                self.cleanEntry()
+            # 일반 Backspace - 한 글자 삭제
+            else:
+                self.clean()
+        # 등호 (= 또는 Enter)
+        elif key == Qt.Key.Key_Equal or key == Qt.Key.Key_Return or key == Qt.Key.Key_Enter:
+            self.calcEqual()
+        # 빼기 (-)
+        elif key == Qt.Key.Key_Minus:
+            self.calcMinus()
+        # 나누기 (/)
+        elif key == Qt.Key.Key_Slash:
+            self.calcDiv()
+        # 곱하기 (*)
+        elif key == Qt.Key.Key_Asterisk:
+            self.calcMulti()
+        # 더하기 (+)
+        elif key == Qt.Key.Key_Plus:
+            self.calcPlus()
+        # 소수점 (.)
+        elif key == Qt.Key.Key_Period:
+            self.clickDot()
+        # ESC 키 - 프로그램 종료
+        elif key == Qt.Key.Key_Escape:
+            QApplication.instance().quit()
+            e.accept()
+        else:
+            # 다른 키는 기본 처리
+            super().keyPressEvent(e)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
