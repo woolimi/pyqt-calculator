@@ -23,14 +23,18 @@ QPushButton {
     border-radius: 35px;
     font-size: 20px;
     font-weight: bold;
+    transition: all 0.1s;
 }
 
 QPushButton:hover {
     opacity: 0.9;
+    transform: scale(0.98);
 }
 
 QPushButton:pressed {
-    opacity: 0.7;
+    opacity: 0.8;
+    transform: scale(0.95);
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 </string>
   </property>
@@ -89,6 +93,13 @@ QPushButton:pressed {
     background-color: #ff6b6b;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #ff7b7b;
+}
+QPushButton:pressed {
+    background-color: #ef5b5b;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
 </string>
    </property>
    <property name="text">
@@ -115,6 +126,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #ff8787;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #ff9797;
+}
+QPushButton:pressed {
+    background-color: #ef7777;
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 </string>
    </property>
@@ -143,6 +161,13 @@ QPushButton:pressed {
     background-color: #4ecdc4;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5eddd4;
+}
+QPushButton:pressed {
+    background-color: #3ebcb4;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
 </string>
    </property>
    <property name="text">
@@ -169,6 +194,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #4ecdc4;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #5eddd4;
+}
+QPushButton:pressed {
+    background-color: #3ebcb4;
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 </string>
    </property>
@@ -197,6 +229,13 @@ QPushButton:pressed {
     background-color: #4a4a4a;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
 </string>
    </property>
    <property name="text">
@@ -223,6 +262,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #4a4a4a;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 </string>
    </property>
@@ -251,6 +297,13 @@ QPushButton:pressed {
     background-color: #4a4a4a;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
 </string>
    </property>
    <property name="text">
@@ -277,6 +330,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #4ecdc4;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #5eddd4;
+}
+QPushButton:pressed {
+    background-color: #3ebcb4;
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 </string>
    </property>
@@ -305,6 +365,13 @@ QPushButton:pressed {
     background-color: #4a4a4a;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
 </string>
    </property>
    <property name="text">
@@ -331,6 +398,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #4a4a4a;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 </string>
    </property>
@@ -359,6 +433,13 @@ QPushButton:pressed {
     background-color: #4a4a4a;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
 </string>
    </property>
    <property name="text">
@@ -385,6 +466,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #4ecdc4;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #5eddd4;
+}
+QPushButton:pressed {
+    background-color: #3ebcb4;
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 </string>
    </property>
@@ -413,6 +501,13 @@ QPushButton:pressed {
     background-color: #4a4a4a;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
 </string>
    </property>
    <property name="text">
@@ -439,6 +534,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #4a4a4a;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 </string>
    </property>
@@ -467,6 +569,13 @@ QPushButton:pressed {
     background-color: #4a4a4a;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
 </string>
    </property>
    <property name="text">
@@ -493,6 +602,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #ff6b6b;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #ff7b7b;
+}
+QPushButton:pressed {
+    background-color: #ef5b5b;
+    border: 2px solid rgba(255, 255, 255, 0.3);
 }
 </string>
    </property>
@@ -521,6 +637,13 @@ QPushButton:pressed {
     background-color: #4a4a4a;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
 </string>
    </property>
    <property name="text">
@@ -548,6 +671,13 @@ QPushButton:pressed {
     background-color: #4a4a4a;
     color: #ffffff;
 }
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
 </string>
    </property>
    <property name="text">
@@ -574,6 +704,13 @@ QPushButton:pressed {
     <string notr="true">QPushButton {
     background-color: #4a4a4a;
     color: #ffffff;
+}
+QPushButton:hover {
+    background-color: #5a5a5a;
+}
+QPushButton:pressed {
+    background-color: #3a3a3a;
+    border: 2px solid rgba(255, 255, 255, 0.2);
 }
 </string>
    </property>
