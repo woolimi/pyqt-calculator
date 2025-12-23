@@ -41,6 +41,9 @@ class WindowClass(QMainWindow, from_class):
         self.btnApply.clicked.connect(self.apply)
         self.spinBox.valueChanged.connect(self.changeSpinBox)
         self.slider.valueChanged.connect(self.changeSlider)
+        
+        self.btnSave.clicked.connect(self.saveImage)
+        self.btnOpen.clicked.connect(self.openImage)
 
         url = "https://imageio.forbes.com/specials-images/imageserve/61b1f75e9bdd78e1c08fdd64/A-funny-labrador-dog-with-a-curiously-placed-bubble-in-its-behind-/0x0.jpg?crop=922%2C956%2Cx0%2Cy279%2Csafe&width=960&dpr=1"
         image = urllib.request.urlopen(url).read()
@@ -72,6 +75,55 @@ class WindowClass(QMainWindow, from_class):
 
         self.slider.setRange(int(min), int(max))
         self.slider.setSingleStep(int(step))
+    
+    def openImage(self):
+        # Open file dialog to select image file
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Image",
+            "./",
+            "Images (*.png *.jpg *.jpeg *.bmp *.gif *.webp *.ico *.svg);;All Files (*)"
+        )
+        
+        if file_path:
+            # Load image from file
+            self.pixmap = QPixmap(file_path)
+            if not self.pixmap.isNull():
+                # Scale image to fit labelPixmap
+                scaled_pixmap = self.pixmap.scaled(
+                    self.labelPixmap.width(), 
+                    self.labelPixmap.height(),
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                self.labelPixmap.setPixmap(scaled_pixmap)
+            else:
+                QMessageBox.warning(self, "Error", "Failed to load image file")
+    
+    def saveImage(self):
+        # Open file dialog to get save file name
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, 
+            "Save Image", 
+            "./", 
+            "PNG Images (*.png);;All Files (*)"
+        )
+        
+        if file_path:
+            # Ensure file has .png extension
+            if not file_path.lower().endswith('.png'):
+                file_path += '.png'
+            
+            # Get current pixmap from label
+            current_pixmap = self.labelPixmap.pixmap()
+            if current_pixmap and not current_pixmap.isNull():
+                # Save the pixmap to file as PNG
+                if current_pixmap.save(file_path, "PNG"):
+                    QMessageBox.information(self, "Success", f"Image saved to {file_path}")
+                else:
+                    QMessageBox.warning(self, "Error", "Failed to save image")
+            else:
+                QMessageBox.warning(self, "Error", "No image to save")
 
 
 if __name__ == "__main__":
