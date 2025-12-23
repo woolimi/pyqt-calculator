@@ -1,3 +1,39 @@
+"""
+이미지 리사이징 로직 설명:
+
+1. 파일 오픈 및 읽기:
+   - openImage(): QFileDialog로 이미지 파일 선택
+   - 선택한 파일을 QPixmap으로 로드
+   - loadAndDisplayImage() 호출하여 이미지 표시
+
+2. 초기 이미지 로드 (loadAndDisplayImage):
+   - 원본 이미지를 self.originalPixmap에 저장
+   - labelPixmap의 폭(width)을 max_size로 설정
+   - spinBox/slider의 최대값을 max_size로 설정
+   - 초기값을 max_size로 설정
+   - 원본 이미지를 종횡비 유지하면서 폭을 max_size로 리사이즈
+   - 리사이즈된 이미지를 labelPixmap에 표시
+
+3. 리사이즈 변화 (updateImageSize):
+   - spinBox/slider 값(value)이 변경될 때 호출
+   - value는 이미지의 폭(width)을 의미
+   - 원본 이미지(self.originalPixmap)를 종횡비 유지하면서 폭을 value로 리사이즈
+   - 리사이즈된 이미지를 labelPixmap에 직접 표시
+   - changeSlider()와 changeSpinBox()에서 호출
+
+4. 저장 (saveImage):
+   - 현재 labelPixmap에 표시된 pixmap을 가져옴
+   - QFileDialog로 저장 경로 선택
+   - 선택한 경로에 PNG 형식으로 저장
+   - 저장되는 이미지는 현재 표시된 크기(종횡비 유지된 리사이즈 이미지)
+
+주의사항:
+- 모든 리사이징은 종횡비를 유지하면서 폭을 기준으로 리사이즈
+- 원본 이미지는 self.originalPixmap에 보관되어 항상 원본에서 리사이즈
+- max 값은 labelPixmap의 폭을 초과할 수 없음
+- spinBox/slider 값은 이미지의 폭(width)을 의미
+"""
+
 import sys
 import re
 from PyQt6.QtWidgets import *
@@ -27,15 +63,24 @@ class WindowClass(QMainWindow, from_class):
         self.editMax.setValidator(QIntValidator())
         self.editStep.setValidator(QIntValidator())
 
+        # Initialize originalPixmap
+        self.originalPixmap = QPixmap()
+
+        # Calculate max value based on labelPixmap width
+        max_size = self.labelPixmap.width()
+        self.spinBox.setMaximum(max_size)
+        self.slider.setMaximum(max_size)
+        self.spinBox.setValue(max_size)
+        self.slider.setValue(max_size)
+        self.editMax.setText(str(max_size))
+
         min = self.spinBox.minimum()
-        max = self.spinBox.maximum()
         step = self.spinBox.singleStep()
 
         self.editMin.setText(str(min))
-        self.editMax.setText(str(max))
         self.editStep.setText(str(step))
 
-        self.slider.setRange(int(min), int(max))
+        self.slider.setRange(int(min), int(max_size))
         self.slider.setSingleStep(int(step))
 
         self.btnApply.clicked.connect(self.apply)
@@ -45,36 +90,95 @@ class WindowClass(QMainWindow, from_class):
         self.btnSave.clicked.connect(self.saveImage)
         self.btnOpen.clicked.connect(self.openImage)
 
+        # Load initial image
         url = "https://imageio.forbes.com/specials-images/imageserve/61b1f75e9bdd78e1c08fdd64/A-funny-labrador-dog-with-a-curiously-placed-bubble-in-its-behind-/0x0.jpg?crop=922%2C956%2Cx0%2Cy279%2Csafe&width=960&dpr=1"
         image = urllib.request.urlopen(url).read()
 
-        self.pixmap = QPixmap()
-        # self.pixmap.load("../data/cat.png")
-        self.pixmap.loadFromData(image)
-        self.pixmap = self.pixmap.scaled(self.labelPixmap.width(), self.labelPixmap.height())
-        self.labelPixmap.setPixmap(self.pixmap)
-        self.labelPixmap.resize(self.labelPixmap.pixmap().width(), self.labelPixmap.pixmap().height())
+        initial_pixmap = QPixmap()
+        initial_pixmap.loadFromData(image)
+        self.loadAndDisplayImage(initial_pixmap)
+
+    def loadAndDisplayImage(self, pixmap):
+        """Load image and display it, setting up max values and initial display"""
+        if pixmap.isNull():
+            return
+        
+        # Store original pixmap
+        self.originalPixmap = pixmap
+        
+        # Recalculate max value based on labelPixmap width
+        max_size = self.labelPixmap.width()
+        self.spinBox.setMaximum(max_size)
+        self.slider.setMaximum(max_size)
+        self.editMax.setText(str(max_size))
+        
+        # Set initial value to max
+        self.spinBox.setValue(max_size)
+        self.slider.setValue(max_size)
+        
+        # Resize original image maintaining aspect ratio, width = max_size
+        resized_pixmap = pixmap.scaledToWidth(
+            max_size,
+            Qt.TransformationMode.SmoothTransformation
+        )
+        self.labelPixmap.setPixmap(resized_pixmap)
 
     def changeSlider(self):
         actualValue = self.slider.value()
         self.sliderValue.setText(str(actualValue))
         self.spinBox.setValue(actualValue)
+        self.updateImageSize(actualValue)
+
+    def updateImageSize(self, value):
+        """Update image size based on spinBox/slider value (value = width)"""
+        if self.originalPixmap.isNull():
+            return
+        
+        # Resize original image maintaining aspect ratio, width = value
+        resized_pixmap = self.originalPixmap.scaledToWidth(
+            value,
+            Qt.TransformationMode.SmoothTransformation
+        )
+
+        self.labelPixmap.setPixmap(resized_pixmap)
 
     def changeSpinBox(self):
         actualValue = self.spinBox.value()
         self.spinBoxValue.setText(str(actualValue))
         self.slider.setValue(actualValue)
+        self.updateImageSize(actualValue)
 
     def apply(self):
-        min = self.editMin.text()
-        max = self.editMax.text()
+        min_text = self.editMin.text()
+        max_text = self.editMax.text()
         step = self.editStep.text()
 
-        self.spinBox.setRange(int(min), int(max))
+        # Ensure max doesn't exceed labelPixmap width
+        max_size = self.labelPixmap.width()
+        max_value = min(int(max_text), max_size)
+        min_value = int(min_text)
+        
+        # Update max value in editMax if it was limited
+        if int(max_text) > max_size:
+            self.editMax.setText(str(max_size))
+            max_value = max_size
+        if int(min_text) > max_value:
+            self.editMin.setText(str(max_value))
+            min_value = max_value
+
+        self.spinBox.setRange(min_value, max_value)
         self.spinBox.setSingleStep(int(step))
 
-        self.slider.setRange(int(min), int(max))
+        self.slider.setRange(min_value, max_value)
         self.slider.setSingleStep(int(step))
+        
+        # Ensure current value doesn't exceed new max
+        current_value = min(self.spinBox.value(), max_value)
+        self.spinBox.setValue(current_value)
+        self.slider.setValue(current_value)
+        
+        # Update image size with current value
+        self.updateImageSize(current_value)
     
     def openImage(self):
         # Open file dialog to select image file
@@ -87,16 +191,9 @@ class WindowClass(QMainWindow, from_class):
         
         if file_path:
             # Load image from file
-            self.pixmap = QPixmap(file_path)
-            if not self.pixmap.isNull():
-                # Scale image to fit labelPixmap
-                scaled_pixmap = self.pixmap.scaled(
-                    self.labelPixmap.width(), 
-                    self.labelPixmap.height(),
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                )
-                self.labelPixmap.setPixmap(scaled_pixmap)
+            pixmap = QPixmap(file_path)
+            if not pixmap.isNull():
+                self.loadAndDisplayImage(pixmap)
             else:
                 QMessageBox.warning(self, "Error", "Failed to load image file")
     
