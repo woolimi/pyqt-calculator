@@ -30,6 +30,11 @@ class WindowClass(QMainWindow, from_class):
         self.recordTimer.setInterval(0.05)
 
         self.btnCapture.hide()
+        self.btnPlay.hide()
+        self.btnPause.hide()
+        
+        self.videoPlaying = False
+        self.videoFile = None
         
         self.btnOpen.clicked.connect(self.openFile)
         self.btnCamera.clicked.connect(self.clickCamera)
@@ -37,6 +42,22 @@ class WindowClass(QMainWindow, from_class):
         self.btnRecord.clicked.connect(self.clickRecord)
         self.recordTimer.timeout.connect(self.updateRecord)
         self.btnCapture.clicked.connect(self.clickCapture)
+        self.btnPlay.clicked.connect(self.clickPlay)
+        self.btnPause.clicked.connect(self.clickPause)
+
+    def clickPlay(self):
+        if self.videoFile and not self.videoPlaying:
+            self.videoPlaying = True
+            self.cameraTimer.start()
+            self.btnPause.show()
+            self.btnPlay.hide()
+
+    def clickPause(self):
+        if self.videoFile and self.videoPlaying:
+            self.videoPlaying = False
+            self.cameraTimer.stop()
+            self.btnPause.hide()
+            self.btnPlay.show()
 
     def clickCapture(self):
         self.now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -79,17 +100,36 @@ class WindowClass(QMainWindow, from_class):
             self.stopRecording()
 
     def updateCamera(self):
-        retVal, image = self.video.read()
-        if retVal:
-            self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        # 비디오 파일 재생 중인 경우
+        if self.videoFile and self.videoPlaying:
+            retVal, image = self.videoFile.read()
+            if retVal:
+                self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                h, w, c = self.image.shape
+                qimage = QImage(self.image.data, w, h, w*c, QImage.Format.Format_RGB888)
+                self.pixmap = self.pixmap.fromImage(qimage)
+                self.pixmap = self.pixmap.scaled(self.label.width(), self.label.height())
+                self.label.setPixmap(self.pixmap)
+            else:
+                # 비디오 끝에 도달
+                self.videoPlaying = False
+                self.cameraTimer.stop()
+                self.videoFile.set(cv2.CAP_PROP_POS_FRAMES, 0)  # 처음으로 되돌리기
+            return
+        
+        # 카메라 사용 중인 경우
+        if self.cameraOn and hasattr(self, 'video'):
+            retVal, image = self.video.read()
+            if retVal:
+                self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-            h,w,c = self.image.shape
-            qimage = QImage(self.image.data, w, h, w*c, QImage.Format.Format_RGB888)
+                h,w,c = self.image.shape
+                qimage = QImage(self.image.data, w, h, w*c, QImage.Format.Format_RGB888)
 
-            self.pixmap = self.pixmap.fromImage(qimage)
-            self.pixmap = self.pixmap.scaled(self.label.width(), self.label.height())
+                self.pixmap = self.pixmap.fromImage(qimage)
+                self.pixmap = self.pixmap.scaled(self.label.width(), self.label.height())
 
-            self.label.setPixmap(self.pixmap)
+                self.label.setPixmap(self.pixmap)
 
     def clickCamera(self):
         if not self.cameraOn:
@@ -109,15 +149,57 @@ class WindowClass(QMainWindow, from_class):
             self.btnCapture.hide()
     
     def openFile(self):
-        file = QFileDialog.getOpenFileName(filter="Image (*.png *.jpg)")
-        image = cv2.imread(file[0])
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        h,w,c = image.shape
-        qimage = QImage(image.data, w, h, w*c, QImage.Format.Format_RGB888)
+        file = QFileDialog.getOpenFileName(
+            self, 
+            "파일 열기", 
+            "", 
+            "이미지 및 비디오 (*.png *.jpg *.jpeg *.bmp *.avi *.mp4 *.mov *.mkv);;이미지 (*.png *.jpg *.jpeg *.bmp);;비디오 (*.avi *.mp4 *.mov *.mkv)"
+        )
+        if not file[0]:  # 파일 선택 취소
+            return
+        filepath = file[0]
+        file_ext = filepath.lower().split('.')[-1]
 
-        self.pixmap = self.pixmap.fromImage(qimage)
-        self.pixmap = self.pixmap.scaled(self.label.width(), self.label.height())
-        self.label.setPixmap(self.pixmap)
+        if file_ext in ['png', 'jpg', 'jpeg', 'bmp']:
+            image = cv2.imread(file[0])
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            h,w,c = image.shape
+            qimage = QImage(image.data, w, h, w*c, QImage.Format.Format_RGB888)
+
+            self.pixmap = self.pixmap.fromImage(qimage)
+            self.pixmap = self.pixmap.scaled(self.label.width(), self.label.height())
+            self.label.setPixmap(self.pixmap)
+        elif file_ext in ['avi', 'mp4', 'mov', 'mkv']:
+            # 카메라가 켜져있으면 먼저 끄기
+            if self.cameraOn:
+                self.clickCamera()
+            
+            # 기존 비디오 파일이 있으면 해제
+            if self.videoFile:
+                self.videoFile.release()
+            
+            self.videoFile = cv2.VideoCapture(filepath)
+            if not self.videoFile.isOpened():
+                QMessageBox.warning(self, "오류", "비디오를 불러올 수 없습니다.")
+                self.videoFile = None
+                return
+            
+            self.videoPlaying = False
+            self.btnPlay.show()
+            
+            # 첫 프레임 표시
+            retVal, image = self.videoFile.read()
+            if retVal:
+                self.videoFile.set(cv2.CAP_PROP_POS_FRAMES, 0)  # 처음으로 되돌리기
+                self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+                h, w, c = self.image.shape
+                qimage = QImage(self.image.data, w, h, w*c, QImage.Format.Format_RGB888)
+                self.pixmap = self.pixmap.fromImage(qimage)
+                self.pixmap = self.pixmap.scaled(self.label.width(), self.label.height())
+                self.label.setPixmap(self.pixmap)
+        else:
+            QMessageBox.warning(self, "파일 형식 오류", "지원되지 않는 파일 형식입니다.")
+            return
 
 
 if __name__ == "__main__":
