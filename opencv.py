@@ -20,22 +20,29 @@ class WindowClass(QMainWindow, from_class):
 
         self.pixmap = QPixmap()
         self.cameraOn = False
-        self.camera_timer = MyTimer()
-        self.camera_timer.setInterval(0.05)
+        self.cameraTimer = MyTimer()
+        self.cameraTimer.setInterval(0.05)
         self.count = 0
 
         self.recording = False
         self.btnRecord.hide()
-        self.record_timer = MyTimer()
-        self.record_timer.setInterval(0.05)
+        self.recordTimer = MyTimer()
+        self.recordTimer.setInterval(0.05)
 
         self.btnCapture.hide()
         
         self.btnOpen.clicked.connect(self.openFile)
         self.btnCamera.clicked.connect(self.clickCamera)
-        self.camera_timer.timeout.connect(self.updateCamera)
+        self.cameraTimer.timeout.connect(self.updateCamera)
         self.btnRecord.clicked.connect(self.clickRecord)
-        self.record_timer.timeout.connect(self.updateRecord)
+        self.recordTimer.timeout.connect(self.updateRecord)
+        self.btnCapture.clicked.connect(self.clickCapture)
+
+    def clickCapture(self):
+        self.now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = self.now + ".jpg"
+        image_bgr = cv2.cvtColor(self.image, cv2.COLOR_RGB2BGR)
+        cv2.imwrite(filename, image_bgr)
 
     def updateRecord(self):
         self.labelTime.setText(str(self.count))
@@ -52,10 +59,10 @@ class WindowClass(QMainWindow, from_class):
         h = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
         self.writer = cv2.VideoWriter(filename, self.fourcc, 20.0, (w, h))
-        self.record_timer.start()
+        self.recordTimer.start()
 
     def stopRecording(self):
-        self.record_timer.stop()
+        self.recordTimer.stop()
 
         if self.recording == True:
             self.writer.release()
@@ -88,14 +95,14 @@ class WindowClass(QMainWindow, from_class):
         if not self.cameraOn:
             self.btnCamera.setText("Camera Off")
             self.cameraOn = True
-            self.camera_timer.start()
+            self.cameraTimer.start()
             self.video = cv2.VideoCapture(-1)
             self.btnRecord.show()
             self.btnCapture.show()
         else:
             self.btnCamera.setText("Camera On")
             self.cameraOn = False
-            self.camera_timer.stop()
+            self.cameraTimer.stop()
             self.video.release()
             self.btnRecord.hide()
             self.stopRecording()
