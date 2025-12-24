@@ -35,6 +35,7 @@ class WindowClass(QMainWindow, from_class):
         
         self.videoPlaying = False
         self.videoFile = None
+        self.writer = None
         
         self.btnOpen.clicked.connect(self.openFile)
         self.btnCamera.clicked.connect(self.clickCamera)
@@ -47,17 +48,25 @@ class WindowClass(QMainWindow, from_class):
 
     def clickPlay(self):
         if self.videoFile and not self.videoPlaying:
+            # 현재 프레임 위치 확인
+            current_frame = self.videoFile.get(cv2.CAP_PROP_POS_FRAMES)
+            total_frames = self.videoFile.get(cv2.CAP_PROP_FRAME_COUNT)
+            
+            # 비디오가 끝났다면 처음으로 리셋
+            if current_frame >= total_frames - 1:
+                self.videoFile.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            
             self.videoPlaying = True
             self.cameraTimer.start()
-            self.btnPause.show()
-            self.btnPlay.hide()
+            self.btnPause.setEnabled(True)
+            self.btnPlay.setEnabled(False)
 
     def clickPause(self):
         if self.videoFile and self.videoPlaying:
             self.videoPlaying = False
             self.cameraTimer.stop()
-            self.btnPause.hide()
-            self.btnPlay.show()
+            self.btnPause.setEnabled(False)
+            self.btnPlay.setEnabled(True)
 
     def clickCapture(self):
         self.now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -73,9 +82,9 @@ class WindowClass(QMainWindow, from_class):
 
     def startRecording(self):
         self.now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = self.now + ".avi"
+        filename = self.now + ".mp4"
 
-        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         w = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
@@ -87,6 +96,7 @@ class WindowClass(QMainWindow, from_class):
 
         if self.recording == True:
             self.writer.release()
+            self.writer = None
             self.recording = False
 
     def clickRecord(self):
@@ -101,9 +111,9 @@ class WindowClass(QMainWindow, from_class):
 
     def updateCamera(self):
         # 비디오 파일 재생 중인 경우
-        if self.videoFile and self.videoPlaying:
+        if self.videoFile:
             retVal, image = self.videoFile.read()
-            if retVal:
+            if retVal and self.videoPlaying:
                 self.image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 h, w, c = self.image.shape
                 qimage = QImage(self.image.data, w, h, w*c, QImage.Format.Format_RGB888)
@@ -111,11 +121,13 @@ class WindowClass(QMainWindow, from_class):
                 self.pixmap = self.pixmap.scaled(self.label.width(), self.label.height())
                 self.label.setPixmap(self.pixmap)
             else:
-                # 비디오 끝에 도달
                 self.videoPlaying = False
                 self.cameraTimer.stop()
-                self.videoFile.set(cv2.CAP_PROP_POS_FRAMES, 0)  # 처음으로 되돌리기
+                # 프레임 위치는 유지 (clickPlay에서 필요시 리셋)
+                self.btnPause.setEnabled(False)
+                self.btnPlay.setEnabled(True)
             return
+                    
         
         # 카메라 사용 중인 경우
         if self.cameraOn and hasattr(self, 'video'):
@@ -169,6 +181,8 @@ class WindowClass(QMainWindow, from_class):
             self.pixmap = self.pixmap.fromImage(qimage)
             self.pixmap = self.pixmap.scaled(self.label.width(), self.label.height())
             self.label.setPixmap(self.pixmap)
+            self.btnPlay.hide()
+            self.btnPause.hide()
         elif file_ext in ['avi', 'mp4', 'mov', 'mkv']:
             # 카메라가 켜져있으면 먼저 끄기
             if self.cameraOn:
@@ -185,8 +199,10 @@ class WindowClass(QMainWindow, from_class):
                 return
             
             self.videoPlaying = False
+            self.btnPause.show()
             self.btnPlay.show()
-            
+            self.btnPause.setEnabled(False)
+            self.btnPlay.setEnabled(True)
             # 첫 프레임 표시
             retVal, image = self.videoFile.read()
             if retVal:
