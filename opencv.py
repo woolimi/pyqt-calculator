@@ -82,9 +82,9 @@ class WindowClass(QMainWindow, from_class):
 
     def startRecording(self):
         self.now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = self.now + ".mp4"
+        filename = self.now + ".avi"
 
-        self.fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
         w = int(self.video.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(self.video.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
